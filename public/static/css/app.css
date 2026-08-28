@@ -118,12 +118,15 @@ h1,h2,h3,h4{margin:0;font-weight:700;letter-spacing:-.01em}
   scrollbar-width:none}
 .cat-row::-webkit-scrollbar{display:none}
 .cat-c{
+  --catc:var(--ac);
   flex:0 0 auto;padding:9px 13px;border-radius:12px;background:var(--card);
   border:1.5px solid var(--line);font-size:12.5px;font-weight:600;white-space:nowrap;
-  display:flex;align-items:center;gap:6px;transition:all .15s
+  display:flex;align-items:center;gap:6px;transition:all .15s;
+  box-shadow:inset 3px 0 0 -1px var(--catc)
 }
-.cat-c.sel{background:var(--ac);color:#04222a;border-color:var(--ac);font-weight:800}
+.cat-c.sel{background:var(--catc);color:#fff;border-color:var(--catc);font-weight:800;box-shadow:0 4px 14px -4px var(--catc)}
 .cat-c .cnt{font-size:10px;opacity:.7;font-weight:700}
+.cat-c.sel .cnt{opacity:.85}
 
 /* ================= COMMAND CARDS ================= */
 .cmd-grid{display:grid;gap:10px}

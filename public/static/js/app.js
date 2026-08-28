@@ -4,7 +4,16 @@
    ===================================================================== */
 
 import { BRANDS, getBrand } from './data/brands.js';
-import { COMMANDS, CATEGORIES, byCategory, getCommand, CAT_MAP } from './data/commands.js';
+import { COMMANDS, CATEGORIES, GEELY_CATEGORIES, byCategory, getCommand, CAT_MAP } from './data/commands.js';
+
+/* Geely ships its own real on-car category set (语音助手/导航出行/车辆控制/
+   音乐控制/系统控制/生活服务) — use that instead of the generic 12-category
+   layout when Geely is the selected brand. */
+const catsForBrand = (brandId) => brandId === 'geely' ? GEELY_CATEGORIES : CATEGORIES;
+
+const QUICK_DEFAULT = ['ac_on','temp_down','win_open_all','music_play','vol_up','nav_home','battery_level','lock_car'];
+const QUICK_GEELY   = ['gn_home','gc_win_open','gc_temp_24','gm_jay','gm_pause','gs_bt','gs_vol_up'];
+const quickForBrand = (brandId) => brandId === 'geely' ? QUICK_GEELY : QUICK_DEFAULT;
 import { matchIntent, fill, searchCommands, isKhmer, matchReply } from './nlu.js';
 import {
   loadVoices, chineseVoices, allVoices, offlineChineseReady,
@@ -379,7 +388,7 @@ function toggleMic() {
    --------------------------------------------------------------- */
 function renderTalk() {
   const brand = getBrand(S.brand);
-  const quick = ['ac_on','temp_down','win_open_all','music_play','vol_up','nav_home','battery_level','lock_car'];
+  const quick = quickForBrand(S.brand);
 
   return `
     <div class="brand-hero">
@@ -436,9 +445,10 @@ function renderTalk() {
    --------------------------------------------------------------- */
 function cmdCard(c) {
   const hasClip = S.recordedClips.has(c.id);
+  const catColor = (CAT_MAP[c.cat] && CAT_MAP[c.cat].color) || '#22d3ee';
   return `
     <button class="cmd" data-id="${c.id}">
-      <div class="cmd-ic">${c.icon}</div>
+      <div class="cmd-ic" style="background:${catColor}22;border-color:${catColor}55">${c.icon}</div>
       <div class="cmd-b">
         <div class="cmd-zh">${esc(c.zh)}</div>
         ${S.cfg.showPinyin ? `<div class="cmd-py">${esc(c.py)}</div>` : ''}
@@ -453,6 +463,7 @@ function cmdCard(c) {
 
 function renderCommands() {
   const q = $('#cmdSearch') ? $('#cmdSearch').value : '';
+  const cats = catsForBrand(S.brand);
   const list = q.trim() ? searchCommands(q) : byCategory(S.cat);
 
   return `
@@ -465,8 +476,8 @@ function renderCommands() {
 
     ${q.trim() ? '' : `
     <div class="cat-row">
-      ${CATEGORIES.map(c => `
-        <button class="cat-c ${S.cat===c.id?'sel':''}" data-cat="${c.id}">
+      ${cats.map(c => `
+        <button class="cat-c ${S.cat===c.id?'sel':''}" data-cat="${c.id}" style="--catc:${c.color}">
           <span>${c.icon}</span><span>${esc(c.en)}</span>
           <span class="cnt">${byCategory(c.id).length}</span>
         </button>`).join('')}
@@ -806,7 +817,13 @@ document.addEventListener('click', async (e) => {
 
   // brand
   const br = hit('[data-brand]');
-  if (br) { S.brand = br.dataset.brand; saveState(); render(); return; }
+  if (br) {
+    S.brand = br.dataset.brand;
+    // keep the selected commands-category valid for the new brand's category set
+    const validCats = catsForBrand(S.brand);
+    if (!validCats.some(c => c.id === S.cat)) S.cat = validCats[0].id;
+    saveState(); render(); return;
+  }
   if (hit('#goBrand')) return go('cars');
   if (hit('#testWake')) {
     const b = getBrand(S.brand);

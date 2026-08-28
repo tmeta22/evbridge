@@ -16,6 +16,8 @@
    No network. Pure data.
    ===================================================================== */
 
+import { GEELY_CATEGORIES, GEELY_COMMANDS } from './geely.js';
+
 export const CATEGORIES = [
   { id: 'climate',  en: 'Climate / AC',     km: 'ត្រជាក់ / ម៉ាស៊ីនត្រជាក់', zh: '空调', icon: '❄️', color: '#0ea5e9' },
   { id: 'window',   en: 'Windows & Roof',   km: 'កញ្ចក់ និងដំបូល',        zh: '车窗', icon: '🪟', color: '#8b5cf6' },
@@ -31,7 +33,7 @@ export const CATEGORIES = [
   { id: 'safety',   en: 'Safety & Cameras', km: 'សុវត្ថិភាព',            zh: '安全', icon: '🛡️', color: '#dc2626' }
 ];
 
-export const COMMANDS = [
+const GENERIC_COMMANDS = [
   /* ================= CLIMATE ================= */
   { id:'ac_on', cat:'climate', zh:'打开空调', py:'Dǎ kāi kōng tiáo', kmr:'តា ខាយ ឃុង ធាវ',
     en:'Turn on the air conditioner', km:'បើកម៉ាស៊ីនត្រជាក់', icon:'❄️',
@@ -657,6 +659,12 @@ export const COMMANDS = [
     reply:{zh:'倒车雷达已开启', en:'Parking sensors on', km:'ឧបករណ៍ចាប់សញ្ញាចតបានបើក'} }
 ];
 
+/* Merge in the brand-exact Geely command set (from the real Voice Skill
+   menu screenshots) so search + voice recognition cover it too. */
+export const COMMANDS = [...GENERIC_COMMANDS, ...GEELY_COMMANDS];
+export const ALL_CATEGORIES = [...CATEGORIES, ...GEELY_CATEGORIES];
+
+export { GEELY_CATEGORIES, GEELY_COMMANDS };
 export const byCategory = (cat) => COMMANDS.filter(c => c.cat === cat);
 export const getCommand  = (id)  => COMMANDS.find(c => c.id === id);
-export const CAT_MAP = Object.fromEntries(CATEGORIES.map(c => [c.id, c]));
+export const CAT_MAP = Object.fromEntries(ALL_CATEGORIES.map(c => [c.id, c]));
