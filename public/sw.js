@@ -4,7 +4,7 @@
    app works with the phone in airplane mode.
    ========================================================== */
 
-const VERSION = 'evvoice-v1';
+const VERSION = 'evvoice-v2';
 const CORE = [
   '/',
   '/manifest.json',
@@ -14,6 +14,7 @@ const CORE = [
   '/static/js/speech.js',
   '/static/js/data/brands.js',
   '/static/js/data/commands.js',
+  '/static/js/data/geely.js',
   '/static/fonts/khmer-khmer.woff2',
   '/static/fonts/khmer-latin.woff2',
   '/static/icons/icon-192.png',
@@ -100,4 +101,16 @@ self.addEventListener('message', async (e) => {
     e.source && e.source.postMessage({ type: 'CACHE_STATUS', cached: keys.length, total: CORE.length });
   }
   if (e.data === 'SKIP_WAITING') self.skipWaiting();
+});
+
+/* ---------- local notifications: tapping one opens the app ---------- */
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  e.waitUntil((async () => {
+    const list = await clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const c of list) {
+      if ('focus' in c) { c.focus(); return; }
+    }
+    await clients.openWindow('/');
+  })());
 });

@@ -109,19 +109,72 @@ export function offlineChineseReady() {
    SPEAK — the command to the car
    --------------------------------------------------------------- */
 let _current = null;
+let _premiumAudio = null;
 
 export function stopSpeaking() {
   try { speechSynthesis.cancel(); } catch {}
   if (_current && _current.audio) { try { _current.audio.pause(); } catch {} }
+  if (_premiumAudio) { try { _premiumAudio.pause(); } catch {} _premiumAudio = null; }
   _current = null;
+}
+
+/* ---------------------------------------------------------------
+   PREMIUM — fish-audio/s2.1-pro-free via the Vercel AI Gateway
+   Returns the server-generated audio and plays it. Throws with a
+   useful message when the gateway is unavailable so callers can
+   fall back to device TTS.
+   --------------------------------------------------------------- */
+async function premiumSpeak(text, { lang = 'auto', voiceId = null, timeoutMs = 12000 } = {}) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  let res;
+  try {
+    res = await fetch('/api/tts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, language: lang, voice: voiceId || null }),
+      signal: ctrl.signal
+    });
+  } catch (e) {
+    clearTimeout(timer);
+    throw new Error('offline or network error');
+  }
+  clearTimeout(timer);
+  if (!res.ok) {
+    let msg = 'server error ' + res.status;
+    try {
+      const j = await res.json();
+      if (j && typeof j.detail === 'string') msg = j.detail;
+      else if (j && typeof j.error === 'string') msg = j.error;
+    } catch {}
+    throw new Error(msg);
+  }
+
+  const buf = await res.arrayBuffer();
+  const url = URL.createObjectURL(new Blob([buf], { type: res.headers.get('Content-Type') || 'audio/mpeg' }));
+  const audio = new Audio(url);
+  _premiumAudio = audio;
+  await audio.play();
+  return new Promise((resolve, reject) => {
+    audio.onended = () => { URL.revokeObjectURL(url); resolve(); };
+    audio.onerror  = () => { URL.revokeObjectURL(url); reject(new Error('audio play failed')); };
+  });
+}
+
+/** Verify the premium voice end-to-end (Settings test button). Throws on failure. */
+export async function testPremiumVoice(text, voiceId = null) {
+  if (typeof navigator === 'undefined' || !navigator.onLine) throw new Error('no internet connection');
+  await premiumSpeak(text, { lang: 'zh', voiceId });
 }
 
 /**
  * Speak Chinese text to the car.
- * @returns {Promise<{method:'clip'|'tts'|'none', detail:string}>}
+ * Order: recorded clip → premium Fish Audio (if enabled + online) → device TTS.
+ * @returns {Promise<{method:'clip'|'premium'|'tts'|'none', detail:string}>}
  */
 export async function speakChinese(text, cfg = {}) {
-  const { clipId = null, rate = 0.92, volume = 1, pitch = 1, voiceURI = null } = cfg;
+  const { clipId = null, rate = 0.92, volume = 1, pitch = 1, voiceURI = null, premium = true, voiceId = null } = cfg;
+  let premiumNote = null;
 
   // ---- A. owner-recorded clip wins (guaranteed offline) ----
   if (clipId) {
@@ -141,8 +194,20 @@ export async function speakChinese(text, cfg = {}) {
     } catch (e) { /* fall through to TTS */ }
   }
 
-  // ---- B. device Chinese TTS ----
-  if (!('speechSynthesis' in window)) return { method:'none', detail:'No speech engine on this device' };
+  // ---- B. premium Fish Audio voice (online, when enabled) ----
+  if (premium && typeof navigator !== 'undefined' && navigator.onLine) {
+    try {
+      await premiumSpeak(text, { lang: 'zh', voiceId });
+      return { method: 'premium', detail: 'Fish Audio voice', premiumNote: null };
+    } catch (e) {
+      premiumNote = e && e.message ? e.message : 'premium voice failed';
+    }
+  } else if (premium) {
+    premiumNote = 'Premium voice needs internet — using the phone voice.';
+  }
+
+  // ---- C. device Chinese TTS ----
+  if (!('speechSynthesis' in window)) return { method:'none', detail:'No speech engine on this device', premiumNote };
   if (!_voices.length) await loadVoices();
 
   const zh = chineseVoices();
@@ -159,7 +224,7 @@ export async function speakChinese(text, cfg = {}) {
     if (voice) u.voice = voice;
     u.rate = rate; u.volume = volume; u.pitch = pitch;
     let done = false;
-    const finish = (method, detail) => { if (!done) { done = true; resolve({ method, detail }); } };
+    const finish = (method, detail) => { if (!done) { done = true; resolve({ method, detail, premiumNote }); } };
     u.onend   = () => finish(voice ? 'tts' : 'none', voice ? voice.name : 'No Chinese voice installed');
     u.onerror = () => finish('none', 'Speech engine error');
     speechSynthesis.speak(u);
@@ -169,8 +234,16 @@ export async function speakChinese(text, cfg = {}) {
   });
 }
 
-/** Speak a translated line back to the owner (EN or KM). */
-export function speakOwner(text, lang = 'en') {
+/** Speak a translated line back to the owner (EN or KM). Uses the premium
+ *  Fish Audio voice when enabled + online, otherwise the device TTS. */
+export async function speakOwner(text, lang = 'en', opts = {}) {
+  const { premium = false, voiceId = null } = opts;
+  if (premium && typeof navigator !== 'undefined' && navigator.onLine) {
+    try {
+      await premiumSpeak(text, { lang: lang === 'km' ? 'auto' : 'en', voiceId });
+      return;
+    } catch { /* fall through to the device TTS */ }
+  }
   if (!('speechSynthesis' in window)) return;
   const want = lang === 'km' ? 'km' : 'en';
   const v = _voices.find(x => x.lang && x.lang.toLowerCase().startsWith(want))

@@ -5,6 +5,7 @@
   "lang": "en",
   "dir": "ltr",
   "start_url": "/",
+  "id": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",

@@ -17,7 +17,7 @@ const quickForBrand = (brandId) => brandId === 'geely' ? QUICK_GEELY : QUICK_DEF
 import { matchIntent, fill, searchCommands, isKhmer, matchReply } from './nlu.js';
 import {
   loadVoices, chineseVoices, allVoices, offlineChineseReady,
-  speakChinese, speakOwner, stopSpeaking,
+  speakChinese, speakOwner, stopSpeaking, testPremiumVoice,
   ClipRecorder, clipStore, Listener, recognitionAvailable, settings
 } from './speech.js';
 
@@ -40,7 +40,11 @@ const S = {
     speakBack: true,      // read the car's reply aloud in owner language
     showPinyin: true,
     showKhmerRead: true,
-    useRecordings: true
+    useRecordings: true,
+    premiumVoice: true,   // fish-audio s2.1-pro-free via /api/tts (falls back offline)
+    voiceId: null,        // optional Fish Audio voice id (from fish.audio discovery)
+    notifications: true,  // live local notifications for commands / car replies
+    theme: 'auto'         // 'auto' | 'light' | 'dark'
   }
 };
 
@@ -48,6 +52,39 @@ const $  = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, m =>
   ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));
+
+/* ---------------------------------------------------------------
+   LOCAL NOTIFICATIONS — via the Service Worker (offline, no server)
+   --------------------------------------------------------------- */
+async function notify(title, body) {
+  if (!S.cfg.notifications) return;
+  if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
+  if (Notification.permission === 'default') {
+    try { await Notification.requestPermission(); } catch { return; }
+  }
+  if (Notification.permission !== 'granted') return;
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    reg.showNotification(title, {
+      body,
+      icon: '/static/icons/icon-192.png',
+      badge: '/static/icons/icon-192.png',
+      vibrate: [120, 60, 120]
+    });
+  } catch {}
+}
+
+/* PWA install prompt (captured so the user can trigger it from Settings) */
+let installPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  installPrompt = e;
+  render();
+});
+window.addEventListener('appinstalled', () => {
+  installPrompt = null;
+  render();
+});
 
 /* ---------------------------------------------------------------
    PERSISTENCE
@@ -61,6 +98,24 @@ function loadState() {
   if (s.inputLang) S.inputLang = s.inputLang;
   if (typeof s.convo === 'boolean') S.convo = s.convo;
   if (s.cfg) Object.assign(S.cfg, s.cfg);
+}
+
+/* ---------------------------------------------------------------
+   THEME — light / dark / auto
+   --------------------------------------------------------------- */
+function systemLight() {
+  return typeof matchMedia !== 'undefined' && matchMedia('(prefers-color-scheme: light)').matches;
+}
+function applyTheme() {
+  const t = S.cfg.theme || 'auto';
+  const d = t === 'light' ? 'light' : t === 'dark' ? 'dark' : (systemLight() ? 'light' : 'dark');
+  document.documentElement.setAttribute('data-theme', d);
+  const lbl = $('#menuThemeLabel');
+  if (lbl) lbl.textContent = 'Theme: ' + (t === 'auto' ? 'Auto' : t === 'light' ? 'Light' : 'Dark');
+  $$('[data-theme-opt]').forEach(b => b.classList.toggle('sel', b.dataset.themeOpt === t));
+}
+if (typeof matchMedia !== 'undefined') {
+  matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => { if (S.cfg.theme === 'auto') applyTheme(); });
 }
 
 /* ---------------------------------------------------------------
@@ -168,10 +223,20 @@ async function runCommand(cmd, value = null, meta = {}) {
     clipId,
     rate: S.cfg.rate,
     volume: S.cfg.volume,
-    voiceURI: S.cfg.voiceURI
+    voiceURI: S.cfg.voiceURI,
+    premium: S.cfg.premiumVoice,
+    voiceId: S.cfg.voiceId
   });
   S.speaking = false;
   setMicState();
+
+  notify('🚗 Command sent', meta.said || cmd.en || cmd.zh);
+
+  // Surface premium-voice problems once per session so it's never a silent fallback.
+  if (res.premiumNote && !S._premiumWarned) {
+    S._premiumWarned = true;
+    addLine({ kind:'sys', text:`⚠ ${res.premiumNote} — check Settings → Premium voices.` });
+  }
 
   if (res.method === 'none') {
     addLine({ kind:'sys', text:`⚠ ${res.detail}. Show the Chinese text on screen and read it aloud — or record your own clip in Settings.` });
@@ -194,6 +259,10 @@ function stopCarListening() {
 
 function listenForCarReply(value = null) {
   stopCarListening();
+
+  // Only auto-listen for the car's reply in conversation mode. With the wake
+  // word prepended (conversation off) this is a one-shot command — no mic use.
+  if (!S.convo) return;
 
   if (!recognitionAvailable) {
     addLine({ kind:'sys', text:"This browser can't hear the car's reply — it has no speech recognition. Listen to the car directly." });
@@ -236,9 +305,10 @@ function listenForCarReply(value = null) {
         km: rep ? fill(rep.km, value) : null,
         note: rep ? null : "The car said the Chinese above — no translation available for this exact reply."
       });
+      notify('🚗 Car replied', (rep ? fill(rep.en, value) : chosen) || chosen);
       if (S.cfg.speakBack && rep) {
         const line = S.inputLang === 'km' ? fill(rep.km, value) : fill(rep.en, value);
-        if (line) speakOwner(line, S.inputLang);
+        if (line) speakOwner(line, S.inputLang, { premium: S.cfg.premiumVoice, voiceId: S.cfg.voiceId });
       }
     },
     onError: (err) => {
@@ -434,9 +504,105 @@ function renderTalk() {
           <span class="dot ${S.convo?'pulse':''}"></span>${S.convo ? 'Conversation ON' : 'Conversation OFF'}
         </button>
         <button class="tr-clear" id="clearTr">Clear</button>
-      </div>
-      <div class="transcript" id="transcript"></div>
     </div>
+    <div class="transcript" id="transcript"></div>
+  </div>
+`;
+}
+
+/* ---------------------------------------------------------------
+   RENDER: MY EV dashboard
+   (Demo telemetry — real values need a car connection. Quick
+   actions below run the actual voice commands.)
+   --------------------------------------------------------------- */
+function renderMyEv() {
+  const brand = getBrand(S.brand);
+
+  const tile = (icon, label, value, unit) => `
+    <div class="stat-tile">
+      <div class="st-ic">${icon}</div>
+      <div class="st-lb">${esc(label)}</div>
+      <div class="st-v">${esc(value)}</div>
+      <div class="st-u">${esc(unit)}</div>
+    </div>`;
+
+  const journeys = [
+    { ic:'🏠', dest:'Home',        meta:'Bayshore Dr · 3.2 mi · 12 min', pct:'6%' },
+    { ic:'📍', dest:'Market City', meta:'Monivong Blvd · 8.4 mi · 25 min', pct:'11%' },
+    { ic:'🏫', dest:'School',      meta:'Toul Kork · 5.1 mi · 16 min', pct:'8%' }
+  ];
+
+  return `
+    <div class="ev-hero">
+      <span class="ev-pill on"><span class="dot"></span>Active</span>
+      <h2 style="font-size:28px;font-weight:800;letter-spacing:-.03em;margin-top:9px">${esc(brand.name)}</h2>
+      <div class="ev-loc"><span class="pin">📍</span><span>${esc(brand.models || brand.assistant)}</span></div>
+    </div>
+
+    <div class="stat-grid">
+      ${tile('🔋','Battery','84','%')}
+      ${tile('🛣️','Range','312','mi')}
+      ${tile('❄️','Climate','21','°C')}
+      ${tile('⚡','Charging','11','kW')}
+    </div>
+
+    <div class="ev-dark">
+      <div class="ed-lb">Tire Pressure</div>
+      <h3>Optimal</h3>
+      <div class="ed-row">
+        ${[['FL',42],['FR',42],['RL',40],['RR',40]].map(([p,v]) => `
+          <div class="psi"><div class="p">${p}</div><div class="v">${v}</div><div class="u">PSI</div></div>`).join('')}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-t"><span class="em">⚡</span> Charging Status</div>
+      <div class="ev-charge">
+        <div class="ec-main">
+          <div class="ec-lb">State of charge</div>
+          <div class="ec-big">84<small>%</small></div>
+          <div class="ec-meta">Estimated Completion — <b>4h 20m</b></div>
+          <div class="ec-bar"><i style="width:84%"></i></div>
+        </div>
+        <button class="btn dang" style="flex:0 0 120px;margin:0" data-evcmd="charge_stop">⛔ Stop Charge</button>
+      </div>
+
+      <div class="ev-quick">
+        <button class="q" data-quick="ac_on"    data-via="quick"><span class="qi">❄️</span>Climate</button>
+        <button class="q" data-quick="unlock_car" data-via="quick"><span class="qi">🔓</span>Unlock</button>
+        <button class="q" data-quick="find_car"  data-via="quick"><span class="qi">📢</span>Honk</button>
+        <button class="q" data-quick="light_hazard" data-via="quick"><span class="qi">💡</span>Flash</button>
+        <button class="precool" data-quick="ac_on" data-via="quick">❄️<span style="font-size:9px">Pre-Cool</span></button>
+      </div>
+    </div>
+
+    <div class="stat-grid">
+      <div class="card" style="margin-bottom:0">
+        <div class="card-t"><span class="em">❄️</span> Climate</div>
+        <div class="stat-mini"><div class="sv">21°C</div><div class="sl">Driver zone</div></div>
+        <div class="sp"></div>
+        <p class="hint">Fan speed 3 · Auto</p>
+      </div>
+      <div class="card" style="margin-bottom:0">
+        <div class="card-t"><span class="em">🎵</span> Media</div>
+        <div class="stat-mini"><div class="sv" style="font-size:15px;letter-spacing:0">Starlight Muse</div><div class="sl">Now playing</div></div>
+        <div class="sp"></div>
+        <p class="hint">Bluetooth · Spotify</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="jhead"><h3>Recent Journeys</h3><a href="#" data-goto="commands">View All</a></div>
+      ${journeys.map(j => `
+        <div class="ev-journey">
+          <div class="jic">${j.ic}</div>
+          <div class="jb"><div class="jdest">${esc(j.dest)}</div><div class="jmeta">${esc(j.meta)}</div></div>
+          <div class="jpct">${j.pct}</div>
+        </div>`).join('')}
+    </div>
+
+    <p class="hint center">Demo telemetry — connect the car for live values. Quick actions speak real commands.</p>
+    <div class="sp"></div>
   `;
 }
 
@@ -545,6 +711,21 @@ function renderSettings() {
   const all = allVoices();
 
   return `
+    <div class="card">
+      <div class="card-t"><span class="em">🌓</span> Appearance</div>
+      <div class="row">
+        <div class="rl">
+          <div class="rt">Theme</div>
+          <div class="rd">Auto follows your phone's light/dark setting</div>
+        </div>
+      </div>
+      <div class="seg" style="margin-top:12px">
+        <button data-theme-opt="auto"  class="${S.cfg.theme==='auto'?'sel':''}">Auto</button>
+        <button data-theme-opt="light" class="${S.cfg.theme==='light'?'sel':''}">Light</button>
+        <button data-theme-opt="dark"  class="${S.cfg.theme==='dark'?'sel':''}">Dark</button>
+      </div>
+    </div>
+
     <div class="banner ${ready ? 'good' : ''}">
       <span class="bi">${ready ? '✅' : '⚠️'}</span>
       <div>
@@ -608,6 +789,29 @@ function renderSettings() {
     </div>
 
     <div class="card">
+      <div class="card-t"><span class="em">✨</span> Premium voices (online)</div>
+      <div class="row">
+        <div class="rl">
+          <div class="rt">Use Fish Audio premium voice</div>
+          <div class="rd">More natural Chinese & English (fish-audio/s2.1-pro-free via Vercel AI Gateway). Needs internet — falls back to the device voice when offline.</div>
+        </div>
+        <button class="sw ${S.cfg.premiumVoice?'on':''}" data-cfg="premiumVoice"></button>
+      </div>
+      <div class="row">
+        <div class="rl">
+          <div class="rt">Fish Audio voice ID</div>
+          <div class="rd">Optional — copy a voice id from fish.audio discovery. Leave empty for the default voice.</div>
+        </div>
+      </div>
+      <input id="voiceIdIn" placeholder="e.g. 933563129e564b19a115bedd57b7406a" value="${esc(S.cfg.voiceId || '')}" autocomplete="off" spellcheck="false">
+      <div class="sp"></div>
+      <button class="btn sec" id="testPremium">🎧 Test premium voice</button>
+      <p class="hint" id="premiumStatus" style="margin-top:8px">
+        Needs a server credential: Vercel env <b>AI_GATEWAY_TOKEN</b> (vercel.com/ai-gateway/keys) — or a free <b>FISH_AUDIO_API_KEY</b> (fish.audio/app/api-keys), used automatically when the gateway is rate-limited. Then redeploy.
+      </p>
+    </div>
+
+    <div class="card">
       <div class="card-t"><span class="em">🎙</span> Record your own Chinese</div>
       <p class="hint">The most reliable option — works on any phone, always offline. Record yourself (or a Chinese-speaking friend) saying a command, and the app plays that exact clip to your car.</p>
       <div class="sp"></div>
@@ -631,6 +835,13 @@ function renderSettings() {
       </div>
       <div class="row">
         <div class="rl">
+          <div class="rt">Live notifications</div>
+          <div class="rd">Alert me when a command is sent and when the car replies ${('Notification' in window && Notification.permission === 'granted') ? '' : '— tap a command to ask permission'}</div>
+        </div>
+        <button class="sw ${S.cfg.notifications?'on':''}" data-cfg="notifications"></button>
+      </div>
+      <div class="row">
+        <div class="rl">
           <div class="rt">Show pinyin</div>
           <div class="rd">Romanised Chinese under each command</div>
         </div>
@@ -650,8 +861,9 @@ function renderSettings() {
       <p class="hint">
         <b>Speech recognition:</b> ${recognitionAvailable ? 'available on this browser' : 'not available on this browser'}<br><br>
         Reading your voice (English or Khmer) uses your phone's own speech engine. Many phones send audio
-        to a server for this, so it may need internet. <b>Everything else in this app is fully offline:</b>
-        all ${COMMANDS.length} commands, Chinese speech-out, your recordings, translation and the transcript.<br><br>
+        to a server for this, so it may need internet. <b>The app itself works fully offline:</b> all ${COMMANDS.length}
+        commands, translation, the transcript and your recordings. Voice output uses the <b>premium Fish Audio voice</b>
+        when online, and falls back to the phone's built-in Chinese voice when offline.<br><br>
         If voice input fails, the <b>text box</b> and the <b>Commands tab</b> give you complete control with no internet at all.
       </p>
     </div>
@@ -665,6 +877,9 @@ function renderSettings() {
         Built for Cambodian owners of Chinese EVs whose cars only accept Chinese voice commands.
         Install to your home screen to use it with no internet.
       </p>
+      ${installPrompt ? `
+      <div class="sp"></div>
+      <button class="btn" id="installApp">📲 Install EV Voice app</button>` : ''}
     </div>
     <div class="sp"></div>
   `;
@@ -739,9 +954,16 @@ function render() {
   const brand = getBrand(S.brand);
   $('#brandName').textContent = brand.name;
   $('#brandWake').textContent = `${brand.wake} · ${brand.assistant}`;
+  const av = $('#brandAvatar');
+  if (av) {
+    const first = (brand.name.split(/[\s/]/)[0] || brand.name).slice(0, 2).toUpperCase();
+    av.textContent = first || 'EV';
+  }
+  applyTheme();
 
   const host = $('#views');
   if (S.view === 'talk')      host.innerHTML = `<div class="view active">${renderTalk()}</div>`;
+  if (S.view === 'myev')      host.innerHTML = `<div class="view active">${renderMyEv()}</div>`;
   if (S.view === 'commands')  host.innerHTML = `<div class="view active">${renderCommands()}</div>`;
   if (S.view === 'cars')      host.innerHTML = `<div class="view active">${renderCars()}</div>`;
   if (S.view === 'settings')  host.innerHTML = `<div class="view active">${renderSettings()}</div>`;
@@ -769,6 +991,34 @@ document.addEventListener('click', async (e) => {
   // nav
   const nav = hit('.nav-b');
   if (nav) return go(nav.dataset.view);
+
+  // header dropdown menu: close when tapping anywhere outside it
+  const menu = $('#menu');
+  if (menu && !menu.hidden && !hit('#menuBtn') && !t.closest('.menu')) menu.hidden = true;
+  if (hit('#menuBtn')) { if (menu) menu.hidden = !menu.hidden; return; }
+  const menuItem = hit('[data-menu]');
+  if (menuItem) {
+    if (menu) menu.hidden = true;
+    if (menuItem.dataset.menu === 'theme') {
+      const order = ['auto', 'light', 'dark'];
+      const i = order.indexOf(S.cfg.theme || 'auto');
+      S.cfg.theme = order[(i + 1) % order.length];
+      saveState(); applyTheme(); render();
+    } else {
+      go(menuItem.dataset.menu);
+    }
+    return;
+  }
+  const themeOpt = hit('[data-theme-opt]');
+  if (themeOpt) {
+    S.cfg.theme = themeOpt.dataset.themeOpt;
+    saveState(); applyTheme(); render();
+    return;
+  }
+  const evcmd = hit('[data-evcmd]');
+  if (evcmd) { runCommand(getCommand(evcmd.dataset.evcmd), null, { via: 'dashboard' }); return; }
+  const goto = hit('[data-goto]');
+  if (goto) { e.preventDefault(); go(goto.dataset.goto); return; }
 
   // mic
   if (hit('#mic')) return toggleMic();
@@ -798,8 +1048,8 @@ document.addEventListener('click', async (e) => {
   if (hit('#convoToggle')) {
     S.convo = !S.convo; saveState(); render();
     addLine({ kind:'sys', text: S.convo
-      ? `Conversation mode ON — wake word "${getBrand(S.brand).wake}" is now skipped, so you can talk back and forth naturally. Say the wake word once yourself to start.`
-      : 'Conversation mode OFF — the wake word is added before every command again.' });
+      ? `Conversation mode ON — wake word "${getBrand(S.brand).wake}" is skipped and the app auto-listens for the car's reply after each command. Say the wake word once yourself to start.`
+      : 'Conversation mode OFF — the wake word is added before every command again, and the app no longer auto-listens for the car\u2019s reply.' });
     return;
   }
   if (hit('#clearTr')) return clearTranscript();
@@ -827,7 +1077,7 @@ document.addEventListener('click', async (e) => {
   if (hit('#goBrand')) return go('cars');
   if (hit('#testWake')) {
     const b = getBrand(S.brand);
-    return speakChinese(b.wake, { rate:S.cfg.rate, volume:S.cfg.volume, voiceURI:S.cfg.voiceURI });
+    return speakChinese(b.wake, { rate:S.cfg.rate, volume:S.cfg.volume, voiceURI:S.cfg.voiceURI, premium:S.cfg.premiumVoice, voiceId:S.cfg.voiceId });
   }
 
   // settings toggles
@@ -838,8 +1088,35 @@ document.addEventListener('click', async (e) => {
   }
   if (hit('#testVoice')) {
     const b = getBrand(S.brand);
-    const r = await speakChinese(`${b.wake}，打开空调`, { rate:S.cfg.rate, volume:S.cfg.volume, voiceURI:S.cfg.voiceURI });
+    const r = await speakChinese(`${b.wake}，打开空调`, { rate:S.cfg.rate, volume:S.cfg.volume, voiceURI:S.cfg.voiceURI, premium:S.cfg.premiumVoice, voiceId:S.cfg.voiceId });
     if (r.method === 'none') alert('No Chinese voice available on this device.\n\nInstall a Chinese TTS voice in your phone settings, or record your own clips instead.');
+    return;
+  }
+
+  // install the PWA from the About card
+  if (hit('#installApp')) {
+    if (installPrompt) { try { installPrompt.prompt(); } catch {} }
+    return;
+  }
+
+  // verify the premium voice end-to-end
+  if (hit('#testPremium')) {
+    const btn = $('#testPremium');
+    const st = $('#premiumStatus');
+    const b = getBrand(S.brand);
+    btn.textContent = '⏳ Generating…';
+    if (st) { st.textContent = 'Contacting the server…'; st.style.color = ''; }
+    try {
+      await testPremiumVoice(`${b.wake}，打开空调`, S.cfg.voiceId);
+      if (st) { st.textContent = '✓ Premium voice works!'; st.style.color = 'var(--ok)'; }
+    } catch (err) {
+      const why = err && err.message ? err.message : 'unknown error';
+      if (st) {
+        st.textContent = `✗ ${why} — check the AI_GATEWAY_TOKEN env var on Vercel and redeploy.`;
+        st.style.color = 'var(--err)';
+      }
+    }
+    btn.textContent = '🎧 Test premium voice';
     return;
   }
 
@@ -906,6 +1183,11 @@ document.addEventListener('input', (e) => {
   if (e.target.id === 'vol')   { S.cfg.volume = parseFloat(e.target.value); saveState();
     const lbl = document.getElementById('volVal');
     if (lbl) lbl.textContent = Math.round(S.cfg.volume * 100) + '%'; }
+  if (e.target.id === 'voiceIdIn') {
+    const v = e.target.value.trim();
+    S.cfg.voiceId = v || null;
+    saveState();
+  }
 });
 
 document.addEventListener('change', (e) => {
@@ -921,10 +1203,10 @@ function setNet() {
   const p = $('#netPill');
   if (!p) return;
   const on = navigator.onLine;
-  p.className = 'pill ' + (on ? '' : 'on');
-  p.innerHTML = `<span class="dot"></span>${on ? 'Online' : 'Offline ✓'}`;
+  p.className = 'pill ' + (on ? 'on' : 'off');
+  p.innerHTML = `<span class="dot"></span>${on ? 'Connected' : 'Offline'}`;
   p.title = on
-    ? 'Internet available — but this app does not need it'
+    ? 'Internet available — the app works with or without it'
     : 'No internet — the app still works completely';
 }
 setNet();
@@ -947,9 +1229,19 @@ async function boot() {
     addLine({ kind:'sys', text:'⚠ No offline Chinese voice found on this phone. Open Settings → install a Chinese TTS voice, or record your own clips for guaranteed offline use.' });
   }
 
-  // service worker for offline
+  // service worker: offline cache + auto PWA updates
   if ('serviceWorker' in navigator) {
-    try { await navigator.serviceWorker.register('/sw.js'); } catch {}
+    try {
+      const reg = await navigator.serviceWorker.register('/sw.js');
+      // Auto PWA updates — silently reload once a newer service worker activates.
+      if (navigator.serviceWorker.controller) {
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          window.location.reload();
+        });
+      }
+      // Ask the browser to look for a newer worker on every launch.
+      try { reg.update(); } catch {}
+    } catch {}
   }
 
 }
