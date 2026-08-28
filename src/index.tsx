@@ -142,9 +142,14 @@ app.post('/api/tts', async (c) => {
       return c.json({ error: 'tts failed: a Fish Audio voice ID is required when using the direct API' }, 400)
     }
     try {
-      const payload: Record<string, unknown> = { text, voiceId: voice, format: 'mp3' }
-      if (language !== 'auto') payload.language = language
-      const r = await fetch('https://fishaudio.org/api/open/v3/speech/tts', {
+      const payload: Record<string, unknown> = {
+        text,
+        reference_id: voice, // Fish Audio voice / reference id (e.g. fbe02f8306fc4d3d915e9871722a39d5)
+        format: 'mp3',
+        chunk_length: 200
+      }
+      if (language === 'zh' || language === 'en' || language === 'ja' || language === 'ko') payload.language = language
+      const r = await fetch('https://api.fish.audio/v1/tts', {
         method: 'POST',
         headers: { Authorization: `Bearer ${fishKey}`, 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
