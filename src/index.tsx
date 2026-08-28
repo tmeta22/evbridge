@@ -65,6 +65,11 @@ const SHELL = `<!DOCTYPE html>
   <div class="map-page" id="mapPage" hidden>
     <div class="card">
       <div class="card-t"><span class="em">🗺</span> EV Maps <span class="muted small" style="text-transform:none;font-weight:600">· charging stations in Cambodia</span></div>
+      <div class="search-box map-search">
+        <span class="si">🔍</span>
+        <input id="stationSearch" placeholder="Search stations — name, province, address…" autocomplete="off" spellcheck="false">
+        <button class="sx" id="clearStationSearch">✕</button>
+      </div>
       <div class="seg map-layers" id="mapLayers">
         <button data-map-layer="google" class="sel">Google</button>
         <button data-map-layer="satellite">Satellite</button>

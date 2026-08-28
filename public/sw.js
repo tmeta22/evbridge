@@ -4,7 +4,7 @@
    app works with the phone in airplane mode.
    ========================================================== */
 
-const VERSION = 'evvoice-v7';
+const VERSION = 'evvoice-v9';
 const CORE = [
   '/',
   '/manifest.json',

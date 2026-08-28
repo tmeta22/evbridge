@@ -182,26 +182,17 @@ export async function initMaps() {
       </div>`;
   }
 
-  /* ---------- nearest-stations list ---------- */
-  function renderList() {
-    if (!stations.length) return;
-    const c = map.getCenter();
-    const sorted = [...stations]
-      .filter(s => Number.isFinite(Number(s.lat)) && Number.isFinite(Number(s.lng)))
-      .map(s => ({ s, d: Math.hypot(Number(s.lat) - c.lat, Number(s.lng) - c.lng) }))
-      .sort((a, b) => a.d - b.d)
-      .slice(0, 10);
-    strip.innerHTML = `
-      <div class="map-strip-h">⚡ ${stations.length} stations · ${sorted.length} nearest</div>
-      ${sorted.map(({ s }) => {
-        const av = avail(s);
-        const kw = s.max_kw ? ` · ${s.max_kw}kW` : '';
-        return `<button class="mst" data-mid="${esc(s.id)}">
-          <span class="mst-dot" style="background:${av.c}"></span>
-          <span class="mst-b"><b>${esc(s.name)}</b><em>${esc(s.province || 'Cambodia')}${kw} · ${av.t}</em></span>
-          <span class="mst-go">›</span>
-        </button>`;
-      }).join('')}`;
+  /* ---------- station list row + fly-to ---------- */
+  function stationRow(s) {
+    const av = avail(s);
+    const kw = s.max_kw ? ` · ${s.max_kw}kW` : '';
+    return `<button class="mst" data-mid="${esc(s.id)}">
+      <span class="mst-dot" style="background:${av.c}"></span>
+      <span class="mst-b"><b>${esc(s.name)}</b><em>${esc(s.province || 'Cambodia')}${kw} · ${av.t}</em></span>
+      <span class="mst-go">›</span>
+    </button>`;
+  }
+  function bindRows() {
     strip.querySelectorAll('.mst').forEach((el) => {
       el.addEventListener('click', () => {
         const s = stations.find(x => x.id === el.dataset.mid);
@@ -214,6 +205,62 @@ export async function initMaps() {
       });
     });
   }
-  map.on('moveend', renderList);
+
+  /* ---------- nearest-stations list ---------- */
+  function renderList() {
+    if (!stations.length) return;
+    const c = map.getCenter();
+    const sorted = [...stations]
+      .filter(s => Number.isFinite(Number(s.lat)) && Number.isFinite(Number(s.lng)))
+      .map(s => ({ s, d: Math.hypot(Number(s.lat) - c.lat, Number(s.lng) - c.lng) }))
+      .sort((a, b) => a.d - b.d)
+      .slice(0, 10);
+    strip.innerHTML = `
+      <div class="map-strip-h">⚡ ${stations.length} stations · ${sorted.length} nearest</div>
+      ${sorted.map(({ s }) => stationRow(s)).join('')}`;
+    bindRows();
+  }
+
+  /* ---------- search stations (name / province / address / features) ---------- */
+  function renderSearch(q) {
+    if (!stations.length) return;
+    const needle = q.toLowerCase();
+    const hits = stations.filter(s => {
+      const hay = [s.name, s.province, s.address, (s.features || []).join(' '), s.phone, s.max_kw]
+        .filter(Boolean).join(' ').toLowerCase();
+      return hay.includes(needle);
+    });
+    strip.innerHTML = hits.length
+      ? `<div class="map-strip-h">🔍 ${hits.length} result${hits.length === 1 ? '' : 's'} for "${esc(q)}"</div>
+         ${hits.map(stationRow).join('')}`
+      : `<p class="hint center" style="padding:16px">No stations match "${esc(q)}" — try a province, city or station name.</p>`;
+    bindRows();
+  }
+
+  /* ---------- search box ---------- */
+  const searchIn = document.getElementById('stationSearch');
+  const clearSearchBtn = document.getElementById('clearStationSearch');
+  if (searchIn) {
+    const doSearch = () => {
+      const q = searchIn.value.trim();
+      if (clearSearchBtn) clearSearchBtn.classList.toggle('show', !!q);
+      q ? renderSearch(q) : renderList();
+    };
+    searchIn.addEventListener('input', doSearch);
+    searchIn.addEventListener('keydown', (e) => { if (e.key === 'Enter') e.preventDefault(); });
+  }
+  if (clearSearchBtn) {
+    clearSearchBtn.addEventListener('click', () => {
+      if (searchIn) searchIn.value = '';
+      clearSearchBtn.classList.remove('show');
+      renderList();
+    });
+  }
+
+  map.on('moveend', () => {
+    // keep showing search results while a query is active, otherwise nearest-10
+    const q = searchIn ? searchIn.value.trim() : '';
+    q ? renderSearch(q) : renderList();
+  });
   renderList();
 }

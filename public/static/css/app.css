@@ -52,6 +52,8 @@ body{
   transition:background .25s ease,color .25s ease
 }
 .km,[lang="km"]{font-family:'Noto Sans Khmer','Kantumruy Pro','NotoKhmer',sans-serif;line-height:1.85}
+/* Khmer-script lines always use the Khmer fonts (glyph fallback handles any Latin inside them) */
+.l-km,.g-km,.cmd-km,.ev-loc,.hint.km,.tr-empty p.km,.map-strip .mst em,.mp-sub,.mp-avail{font-family:'Noto Sans Khmer','Kantumruy Pro','NotoKhmer',sans-serif}
 button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
 button{cursor:pointer;border:none;background:none}
 h1,h2,h3,h4{margin:0;font-weight:800;letter-spacing:-.02em}
@@ -539,7 +541,7 @@ input[type=range]{width:100%;accent-color:var(--ac2);height:26px}
 .vsel.sel{border-color:var(--ac);background:var(--ac-soft);box-shadow:0 0 0 2px var(--ac-soft)}
 .vsel .vs-em{font-size:16px}
 .vsel .vs-n{font-size:12px;font-weight:800;color:var(--tx);margin-top:2px}
-.vsel .vs-id{font-size:9.5px;color:var(--tx3);font-family:ui-monospace,Menlo,monospace}
+.vsel .vs-id{font-size:9.5px;color:var(--tx3);font-family:ui-monospace,Menlo,monospace,"Noto Sans Khmer","Kantumruy Pro","NotoKhmer",sans-serif}
 .vsel .vs-play{
   position:absolute;top:8px;right:8px;font-size:12px;padding:3px 5px;border-radius:8px;
   background:var(--card);border:1px solid var(--line)
@@ -550,7 +552,7 @@ input[type=range]{width:100%;accent-color:var(--ac2);height:26px}
 .muted{color:var(--tx2)}
 .small{font-size:11.5px}
 .center{text-align:center}
-.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace,"Noto Sans Khmer","Kantumruy Pro","NotoKhmer",sans-serif;font-size:12px}
 
 /* ================= BOTTOM NAV (docked bottom bar) ================= */
 .nav{
@@ -613,6 +615,8 @@ input[type=range]{width:100%;accent-color:var(--ac2);height:26px}
   overflow:hidden;border:1.5px solid var(--line);margin-top:12px;background:var(--card2)
 }
 .map-layers{display:grid;grid-template-columns:repeat(4,1fr);margin-top:0}
+.map-search{margin:0 0 11px}
+.map-search input{border-radius:16px}
 .map-geo{
   width:38px;height:38px;border-radius:12px;background:var(--card);border:1.5px solid var(--line);
   font-size:16px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.25);display:grid;place-items:center
@@ -632,7 +636,20 @@ input[type=range]{width:100%;accent-color:var(--ac2);height:26px}
 .mst-go{color:var(--tx3);font-size:18px}
 
 /* Leaflet pin markers */
-.mp .leaflet-container,.leaflet-container{font-family:inherit}
+/* Leaflet's own stylesheet (loaded lazily, after app.css) sets its own
+   font stack on .leaflet-container, so Khmer text in popups falls back to
+   a system font. Force the app stack here with an ID selector so the Khmer
+   fonts (Noto Sans Khmer / Kantumruy Pro) apply to every map element.
+   The map div itself IS #mapHost (Leaflet adds .leaflet-container to it),
+   so we match the element and all of its descendants. */
+#mapHost.leaflet-container,
+#mapHost .leaflet-popup-content-wrapper,
+#mapHost .leaflet-popup-content,
+#mapHost .leaflet-popup-tip,
+#mapHost .leaflet-control a,
+#mapHost .leaflet-control button{
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Inter","Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans Khmer","Kantumruy Pro",sans-serif
+}
 .mpin-wrap{background:none;border:none}
 .mpin{
   width:30px;height:30px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);
