@@ -12,6 +12,7 @@
     "hono": "^4.13.5"
   },
   "devDependencies": {
+    "@hono/node-server": "^1.19.17",
     "@hono/vite-build": "^1.11.1",
     "@hono/vite-dev-server": "^0.26.1",
     "vite": "^8.1.4",
