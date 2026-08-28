@@ -156,8 +156,19 @@ async function premiumSpeak(text, { lang = 'auto', voiceId = null, timeoutMs = 1
   _premiumAudio = audio;
   await audio.play();
   return new Promise((resolve, reject) => {
-    audio.onended = () => { URL.revokeObjectURL(url); resolve(); };
-    audio.onerror  = () => { URL.revokeObjectURL(url); reject(new Error('audio play failed')); };
+    // Safety net: some browsers never fire "ended" (autoplay policy, paused
+    // media, background tab). Settle once playback should have finished.
+    let done = false;
+    const finish = (err) => {
+      if (done) return; done = true;
+      clearTimeout(t);
+      URL.revokeObjectURL(url);
+      err ? reject(err) : resolve();
+    };
+    const dur = audio.duration;
+    const t = setTimeout(() => finish(), (Number.isFinite(dur) && dur > 0) ? Math.min(dur * 1000 + 2000, 60000) : 15000);
+    audio.onended = () => finish();
+    audio.onerror = () => finish(new Error('audio play failed'));
   });
 }
 
@@ -187,8 +198,16 @@ export async function speakChinese(text, cfg = {}) {
         _current = { audio };
         await audio.play();
         return new Promise((resolve) => {
-          audio.onended = () => { URL.revokeObjectURL(url); resolve({ method:'clip', detail:'Your recording' }); };
-          audio.onerror = () => { URL.revokeObjectURL(url); resolve({ method:'clip', detail:'Recording failed' }); };
+          let done = false;
+          const finish = (err) => {
+            if (done) return; done = true;
+            clearTimeout(t);
+            URL.revokeObjectURL(url);
+            resolve({ method:'clip', detail: err ? 'Recording failed' : 'Your recording' });
+          };
+          const t = setTimeout(() => finish(), 15000);
+          audio.onended = () => finish();
+          audio.onerror = () => finish(true);
         });
       }
     } catch (e) { /* fall through to TTS */ }

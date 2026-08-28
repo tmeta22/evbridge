@@ -4,7 +4,7 @@
    app works with the phone in airplane mode.
    ========================================================== */
 
-const VERSION = 'evvoice-v2';
+const VERSION = 'evvoice-v7';
 const CORE = [
   '/',
   '/manifest.json',
@@ -12,9 +12,11 @@ const CORE = [
   '/static/js/app.js',
   '/static/js/nlu.js',
   '/static/js/speech.js',
+  '/static/js/maps.js',
   '/static/js/data/brands.js',
   '/static/js/data/commands.js',
   '/static/js/data/geely.js',
+  '/static/data/stations.json',
   '/static/fonts/khmer-khmer.woff2',
   '/static/fonts/khmer-latin.woff2',
   '/static/icons/icon-192.png',

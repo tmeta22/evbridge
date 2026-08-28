@@ -339,5 +339,108 @@ export const GEELY_COMMANDS = [
     en:"Let's play the idiom chain game", km:'តោះលេងហ្គេមចង្វាក់ពាក្យប្រយោគ', icon:'🐉',
     keys:['idiom chain game','play chengyu jielong','word chain game'],
     kkeys:['ហ្គេមចង្វាក់ពាក្យប្រយោគ','លេងចង្វាក់ពាក្យ'],
-    reply:{zh:'好呀，你先来', en:"Sure, you go first", km:'បាទ អ្នកចាប់ផ្តើមមុន'} }
+    reply:{zh:'好呀，你先来', en:"Sure, you go first", km:'បាទ អ្នកចាប់ផ្តើមមុន'} },
+
+  /* ================= Vehicle Control additions (Geely Galaxy cockpit reference) ================= */
+  { id:'gc_ac_power', cat:'gc', zh:'打开空调', py:'Dǎ kāi kōng tiáo', kmr:'តា ខាយ ឃុង ធាវ',
+    en:'Turn on the air conditioning', km:'បើកម៉ាស៊ីនត្រជាក់', icon:'❄️',
+    keys:['turn on ac','turn on air conditioning','aircon on','ac on'],
+    kkeys:['បើកម៉ាស៊ីនត្រជាក់','បើកអេស៊ី'],
+    reply:{zh:'空调已打开', en:'Air conditioning is on', km:'ម៉ាស៊ីនត្រជាក់បានបើក'} },
+
+  { id:'gc_ac_off', cat:'gc', zh:'关闭空调', py:'Guān bì kōng tiáo', kmr:'ក្វាន ពី ឃុង ធាវ',
+    en:'Turn off the air conditioning', km:'បិទម៉ាស៊ីនត្រជាក់', icon:'🚫',
+    keys:['turn off ac','close the ac','aircon off','ac off'],
+    kkeys:['បិទម៉ាស៊ីនត្រជាក់','បិទអេស៊ី'],
+    reply:{zh:'空调已关闭', en:'Air conditioning is off', km:'ម៉ាស៊ីនត្រជាក់បានបិទ'} },
+
+  { id:'gc_seat_vent_on', cat:'gc', zh:'打开主驾座椅通风', py:'Dǎ kāi zhǔ jià zuò yǐ tōng fēng', kmr:'តា ខាយ ជូ ជា ជ្វូ យី ធុង ហ្វុង',
+    en:'Start driver seat cooling', km:'បើកកៅអីត្រជាក់ (អ្នកបើកបរ)', icon:'🪑',
+    keys:['seat cooling','ventilation on','cool the seat','seat ventilation'],
+    kkeys:['បើកកៅអីត្រជាក់','កៅអីត្រជាក់'],
+    reply:{zh:'主驾座椅通风已开启', en:'Driver seat cooling on', km:'កៅអីត្រជាក់បានបើក'} },
+
+  { id:'gc_seat_vent_off', cat:'gc', zh:'关闭主驾座椅通风', py:'Guān bì zhǔ jià zuò yǐ tōng fēng', kmr:'ក្វាន ពី ជូ ជា ជ្វូ យី ធុង ហ្វុង',
+    en:'Stop driver seat cooling', km:'បិទកៅអីត្រជាក់', icon:'🧊',
+    keys:['stop seat cooling','seat cooling off','turn off ventilation'],
+    kkeys:['បិទកៅអីត្រជាក់','ឈប់ត្រជាក់កៅអី'],
+    reply:{zh:'主驾座椅通风已关闭', en:'Driver seat cooling off', km:'កៅអីត្រជាក់បានបិទ'} },
+
+  { id:'gc_seat_heat_on', cat:'gc', zh:'打开主驾座椅加热', py:'Dǎ kāi zhǔ jià zuò yǐ jiā rè', kmr:'តា ខាយ ជូ ជា ជ្វូ យី ជា រឺ',
+    en:'Start driver seat heating', km:'បើកកម្តៅកៅអី', icon:'🔥',
+    keys:['seat heating','heat the seat','seat warmer','warm the seat'],
+    kkeys:['បើកកម្តៅកៅអី','កៅអីក្តៅ'],
+    reply:{zh:'主驾座椅加热已开启', en:'Driver seat heating on', km:'កម្តៅកៅអីបានបើក'} },
+
+  { id:'gc_seat_heat_off', cat:'gc', zh:'关闭主驾座椅加热', py:'Guān bì zhǔ jià zuò yǐ jiā rè', kmr:'ក្វាន ពី ជូ ជា ជ្វូ យី ជា រឺ',
+    en:'Stop driver seat heating', km:'បិទកម្តៅកៅអី', icon:'🧊',
+    keys:['stop seat heating','seat heating off','turn off seat heat'],
+    kkeys:['បិទកម្តៅកៅអី','ឈប់កម្តៅកៅអី'],
+    reply:{zh:'主驾座椅加热已关闭', en:'Driver seat heating off', km:'កម្តៅកៅអីបានបិទ'} },
+
+  { id:'gc_seat_fwd', cat:'gc', zh:'座椅往前调', py:'Zuò yǐ wǎng qián tiáo', kmr:'ជ្វូ យី វ៉ាង ឆៀន ធាវ',
+    en:'Move the seat forward', km:'រំកិលកៅអីទៅមុខ', icon:'↗️',
+    keys:['seat forward','move seat forward','push seat up'],
+    kkeys:['កៅអីទៅមុខ','រំកិលទៅមុខ'],
+    reply:{zh:'座椅已往前调', en:'Seat moved forward', km:'កៅអីបានរំកិលទៅមុខ'} },
+
+  { id:'gc_seat_back', cat:'gc', zh:'座椅往后调', py:'Zuò yǐ wǎng hòu tiáo', kmr:'ជ្វូ យី វ៉ាង ហូវ ធាវ',
+    en:'Move the seat backward', km:'រំកិលកៅអីទៅក្រោយ', icon:'↘️',
+    keys:['seat backward','move seat back','push seat back'],
+    kkeys:['កៅអីទៅក្រោយ','រំកិលទៅក្រោយ'],
+    reply:{zh:'座椅已往后调', en:'Seat moved backward', km:'កៅអីបានរំកិលទៅក្រោយ'} },
+
+  { id:'gc_sunroof_open', cat:'gc', zh:'打开天窗', py:'Dǎ kāi tiān chuāng', kmr:'តា ខាយ ធាន ឈ្វាង',
+    en:'Open the sunroof', km:'បើកដំបូលកញ្ចក់', icon:'🌞',
+    keys:['open sunroof','sunroof open','open the roof'],
+    kkeys:['បើកដំបូលកញ្ចក់','ដំបូលកញ្ចក់'],
+    reply:{zh:'天窗已打开', en:'Sunroof opened', km:'ដំបូលកញ្ចក់បានបើក'} },
+
+  { id:'gc_sunroof_close', cat:'gc', zh:'关闭天窗', py:'Guān bì tiān chuāng', kmr:'ក្វាន ពី ធាន ឈ្វាង',
+    en:'Close the sunroof', km:'បិទដំបូលកញ្ចក់', icon:'🌥️',
+    keys:['close sunroof','sunroof close','close the roof'],
+    kkeys:['បិទដំបូលកញ្ចក់','បិទដំបូល'],
+    reply:{zh:'天窗已关闭', en:'Sunroof closed', km:'ដំបូលកញ្ចក់បានបិទ'} },
+
+  { id:'gc_sunroof_half', cat:'gc', zh:'天窗开一半', py:'Tiān chuāng kāi yī bàn', kmr:'ធាន ឈ្វាង ខាយ យី ប៉ាន',
+    en:'Open the sunroof halfway', km:'បើកដំបូលកញ្ចក់ពាក់កណ្តាល', icon:'🌗',
+    keys:['sunroof halfway','half open sunroof','open roof halfway'],
+    kkeys:['ដំបូលពាក់កណ្តាល','បើកពាក់កណ្តាល'],
+    reply:{zh:'天窗已开一半', en:'Sunroof opened halfway', km:'ដំបូលបានបើកពាក់កណ្តាល'} },
+
+  { id:'gc_sunroof_vent', cat:'gc', zh:'天窗开条缝', py:'Tiān chuāng kāi tiáo fèng', kmr:'ធាន ឈ្វាង ខាយ ធាវ ហ្វុង',
+    en:'Vent the sunroof (crack it open)', km:'បើកដំបូលបន្តិចបន្តួច', icon:'🌬️',
+    keys:['vent sunroof','crack the sunroof','sunroof vent'],
+    kkeys:['ដំបូលបើកបន្តិច','ខ្យល់ដំបូល'],
+    reply:{zh:'天窗已开一条缝', en:'Sunroof vented', km:'ដំបូលបានបើកបន្តិច'} },
+
+  { id:'gc_shade_open', cat:'gc', zh:'打开遮阳帘', py:'Dǎ kāi zhē yáng lián', kmr:'តា ខាយ ឈឺ យ៉ាង លៀន',
+    en:'Open the sunshade curtain', km:'បើកវាំងននដំបូល', icon:'🪟',
+    keys:['open sunshade','open sunshade curtain','sunshade on'],
+    kkeys:['បើកវាំងននដំបូល','វាំងននដំបូល'],
+    reply:{zh:'遮阳帘已打开', en:'Sunshade opened', km:'វាំងននដំបូលបានបើក'} },
+
+  { id:'gc_shade_close', cat:'gc', zh:'关闭遮阳帘', py:'Guān bì zhē yáng lián', kmr:'ក្វាន ពី ឈឺ យ៉ាង លៀន',
+    en:'Close the sunshade curtain', km:'បិទវាំងននដំបូល', icon:'🌑',
+    keys:['close sunshade','close sunshade curtain','sunshade off'],
+    kkeys:['បិទវាំងននដំបូល','បិទវាំងនន'],
+    reply:{zh:'遮阳帘已关闭', en:'Sunshade closed', km:'វាំងននដំបូលបានបិទ'} },
+
+  { id:'gc_cam360_on', cat:'gc', zh:'打开360全景影像', py:'Dǎ kāi 360 quán jǐng yǐng xiàng', kmr:'តា ខាយ 360 ឈ្វាន ជីង យីង ស្យាង',
+    en:'Open the 360° camera view', km:'បើកកាមេរ៉ា 360°', icon:'📷',
+    keys:['360 camera','open 360 view','surround view','panoramic camera'],
+    kkeys:['កាមេរ៉ា 360','ទិដ្ឋភាព 360'],
+    reply:{zh:'360全景影像已打开', en:'360° camera on', km:'កាមេរ៉ា 360° បានបើក'} },
+
+  { id:'gc_cam360_off', cat:'gc', zh:'关闭360全景影像', py:'Guān bì 360 quán jǐng yǐng xiàng', kmr:'ក្វាន ពី 360 ឈ្វាន ជីង យីង ស្យាង',
+    en:'Close the 360° camera view', km:'បិទកាមេរ៉ា 360°', icon:'🚫',
+    keys:['close 360 camera','turn off 360 view','close surround view'],
+    kkeys:['បិទកាមេរ៉ា 360','បិទទិដ្ឋភាព 360'],
+    reply:{zh:'360全景影像已关闭', en:'360° camera off', km:'កាមេរ៉ា 360° បានបិទ'} },
+
+  { id:'gn_cancel', cat:'gn', zh:'取消导航', py:'Qǔ xiāo dǎo háng', kmr:'ឈូ ស្យាវ តាវ ហាំង',
+    en:'Cancel navigation', km:'លុបចោលការនាំផ្លូវ', icon:'⛔',
+    keys:['cancel navigation','stop navigation','cancel directions'],
+    kkeys:['លុបចោលការនាំផ្លូវ','បោះបង់ការនាំផ្លូវ'],
+    reply:{zh:'已取消导航', en:'Navigation canceled', km:'ការនាំផ្លូវត្រូវបានលុបចោល'} }
 ];

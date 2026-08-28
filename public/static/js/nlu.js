@@ -169,12 +169,15 @@ export function matchIntent(input, opts = {}) {
   }
 
   // ---- slot filling ----
+  // If a number was spoken it is used (clamped to sane ranges); if none was
+  // spoken, value stays null so the app can ask the owner for it.
   let value = null;
   if (top.cmd.slot) {
     value = extractNumber(raw);
-    if (value === null) value = top.cmd.slot === 'temp' ? 24 : 5;
-    if (top.cmd.slot === 'temp') value = Math.min(32, Math.max(16, value));
-    if (top.cmd.slot === 'number') value = Math.min(40, Math.max(0, value));
+    if (value !== null) {
+      if (top.cmd.slot === 'temp') value = Math.min(32, Math.max(16, value));
+      if (top.cmd.slot === 'number') value = Math.min(40, Math.max(0, value));
+    }
   }
 
   return {

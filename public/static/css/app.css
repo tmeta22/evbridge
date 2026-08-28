@@ -4,7 +4,7 @@
    generous radii, soft shadows, SF-Pro-style type.
    ========================================================== */
 
-/* ===== Bundled Khmer font (no network). Latin uses the system SF/Inter stack. ===== */
+/* ===== Khmer fonts: Google Fonts CDN (Noto Sans Khmer / Kantumruy Pro), bundled woff2 as offline fallback ===== */
 @font-face{font-family:'NotoKhmer';font-style:normal;font-weight:400 700;font-display:swap;
   src:url('/static/fonts/khmer-khmer.woff2') format('woff2');
   unicode-range:U+1780-17FF,U+19E0-19FF,U+200C-200D,U+25CC;}
@@ -13,6 +13,7 @@
 
 /* ---------- Dark theme (default) ---------- */
 :root{
+  color-scheme:dark;
   --bg:#0a0f0c; --bg2:#0e1511; --card:#131a16; --card2:#1a231e;
   --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.15);
   --tx:#edf2ef; --tx2:#93a49b; --tx3:#64756c;
@@ -25,9 +26,12 @@
   --hero:#0b3d2e; --hero2:#0d4d3a; --hero-tx:#fff;
   --safe-t:env(safe-area-inset-top,0px);
   --safe-b:env(safe-area-inset-bottom,0px);
+  /* per-language text sizes (JS scales these via Settings → Text size) */
+  --fz-zh:18px; --fz-py:12px; --fz-en:13px; --fz-km:13.5px; --fz-kmr:15.5px;
 }
 /* ---------- Light theme (premium EV: off-white) ---------- */
 html[data-theme="light"]{
+  color-scheme:light;
   --bg:#f5f5f7; --bg2:#ececf0; --card:#ffffff; --card2:#ececf0;
   --line:rgba(20,28,24,.08); --line2:rgba(20,28,24,.16);
   --tx:#1c1c1e; --tx2:#6e6e73; --tx3:#a1a1a6;
@@ -42,12 +46,12 @@ html{-webkit-text-size-adjust:100%}
 
 body{
   margin:0;background:var(--bg);color:var(--tx);
-  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Inter","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Inter","Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans Khmer","Kantumruy Pro",sans-serif;
   font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
   overscroll-behavior-y:none;padding-bottom:calc(92px + var(--safe-b));
   transition:background .25s ease,color .25s ease
 }
-.km,[lang="km"]{font-family:'NotoKhmer',sans-serif;line-height:1.85}
+.km,[lang="km"]{font-family:'Noto Sans Khmer','Kantumruy Pro','NotoKhmer',sans-serif;line-height:1.85}
 button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
 button{cursor:pointer;border:none;background:none}
 h1,h2,h3,h4{margin:0;font-weight:800;letter-spacing:-.02em}
@@ -100,6 +104,7 @@ h1,h2,h3,h4{margin:0;font-weight:800;letter-spacing:-.02em}
   font-size:14px;font-weight:600;color:var(--tx);text-align:left;transition:background .15s
 }
 .menu button:active{background:var(--card2)}
+.menu-sep{height:1px;background:var(--line);margin:6px 4px}
 
 /* ================= LAYOUT ================= */
 .wrap{max-width:760px;margin:0 auto;padding:16px 16px 30px}
@@ -146,6 +151,8 @@ select,.sel-in{
   font-size:13px;outline:none;max-width:200px;color:var(--tx)
 }
 input[type=range]{width:100%;accent-color:var(--ac2);height:26px}
+.lbl-row{display:flex;justify-content:space-between;align-items:center;font-size:10.5px;color:var(--tx3);margin-top:2px}
+.lbl-row b{font-size:12.5px;color:var(--ac-lt);font-weight:800}
 
 /* ================= BRAND HERO (dark signature card) ================= */
 .brand-hero{
@@ -273,11 +280,16 @@ input[type=range]{width:100%;accent-color:var(--ac2);height:26px}
   display:grid;place-items:center;font-size:22px;border:1px solid var(--line)
 }
 .cmd-b{flex:1;min-width:0}
-.cmd-zh{font-size:17.5px;font-weight:700;color:var(--zh);line-height:1.35;letter-spacing:.4px}
-.cmd-py{font-size:11.5px;color:var(--tx2);font-style:italic;margin-top:2px}
-.cmd-en{font-size:13.5px;color:var(--tx);margin-top:5px;font-weight:600}
-.cmd-km{font-size:13.5px;color:var(--km);margin-top:2px;line-height:1.7}
-.cmd-kmr{font-size:11.5px;color:var(--tx3);margin-top:3px;line-height:1.7}
+.cmd-zh{font-size:var(--fz-zh);font-weight:700;color:var(--zh);line-height:1.35;letter-spacing:.4px}
+.cmd-py{font-size:var(--fz-py);color:var(--tx2);font-style:italic;margin-top:2px}
+.cmd-en{font-size:var(--fz-en);color:var(--tx);margin-top:5px;font-weight:600}
+.cmd-km{font-size:var(--fz-km);color:var(--km);margin-top:2px;line-height:1.7}
+.cmd-kmr{font-size:var(--fz-kmr);color:var(--tx3);margin-top:3px;line-height:1.7}
+.slot-chip{
+  display:inline-block;vertical-align:middle;margin:0 3px;padding:1.5px 8px;border-radius:99px;
+  background:var(--ac-soft);border:1px solid var(--ac);color:var(--ac-lt);
+  font-size:9.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase
+}
 .cmd-go{
   flex:0 0 auto;width:36px;height:36px;border-radius:50%;background:var(--ac2);
   display:grid;place-items:center;font-size:15px;color:#fff;align-self:center
@@ -338,6 +350,19 @@ input[type=range]{width:100%;accent-color:var(--ac2);height:26px}
 }
 .chip:active{background:var(--ac2);color:#fff;border-color:var(--ac2)}
 #suggestions{margin-top:9px}
+
+/* 3-language guide chips (Talk page) */
+.guide{display:flex;flex-direction:column;gap:8px}
+.gchip{
+  display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;text-align:left;
+  padding:10px 13px;border-radius:15px;background:var(--card2);border:1.5px solid var(--line);
+  transition:border-color .15s,background .15s,transform .08s
+}
+.gchip:active{background:var(--ac-soft);border-color:var(--ac);transform:scale(.985)}
+.gchip .g-en{font-size:var(--fz-en);font-weight:800;color:var(--tx)}
+.gchip .g-zh{font-size:var(--fz-zh);font-weight:700;color:var(--zh);margin-top:3px}
+.gchip .g-kmr{font-size:var(--fz-kmr);color:var(--tx2);font-style:italic}
+.gchip .g-km{font-size:var(--fz-km);color:var(--km);line-height:1.6}
 #suggestions .chip{background:rgba(251,191,36,.1);border-color:rgba(251,191,36,.4);color:var(--warn)}
 #suggestions .chip:active{background:var(--warn);color:#2a1c00}
 #suggestions::before{
@@ -375,11 +400,11 @@ input[type=range]{width:100%;accent-color:var(--ac2);height:26px}
 .bub .who{font-size:9.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;opacity:.7;margin-bottom:5px}
 .bub .ln{margin-top:5px;line-height:1.55}
 .bub .ln:first-of-type{margin-top:0}
-.bub .l-zh{color:var(--zh);font-size:16.5px;font-weight:700;letter-spacing:.4px}
-.bub .l-py{color:var(--tx2);font-size:11.5px;font-style:italic}
-.bub .l-en{color:var(--tx);font-size:13.5px}
-.bub .l-km{color:var(--km);font-size:14px;line-height:1.75}
-.bub .l-kmr{color:var(--tx3);font-size:11.5px;line-height:1.7}
+.bub .l-zh{color:var(--zh);font-size:var(--fz-zh);font-weight:700;letter-spacing:.4px}
+.bub .l-py{color:var(--tx2);font-size:var(--fz-py);font-style:italic}
+.bub .l-en{color:var(--tx);font-size:var(--fz-en)}
+.bub .l-km{color:var(--km);font-size:var(--fz-km);line-height:1.75}
+.bub .l-kmr{color:var(--tx3);font-size:var(--fz-kmr);line-height:1.7}
 .bub .ts{font-size:9.5px;color:var(--tx3);margin-top:7px;text-align:right}
 .bub .ln.note{color:var(--tx3);font-size:11.5px;font-style:italic}
 
@@ -410,18 +435,115 @@ input[type=range]{width:100%;accent-color:var(--ac2);height:26px}
 .seg{display:flex;gap:5px;background:var(--card2);border:1px solid var(--line);border-radius:99px;padding:4px}
 .seg button{flex:1;padding:8px 12px;border-radius:99px;font-size:12px;font-weight:700;color:var(--tx2);transition:all .15s}
 .seg button.sel{background:var(--ac2);color:#fff;box-shadow:0 3px 10px rgba(13,77,58,.3)}
+.seg.mini{flex:0 0 auto;padding:3px;gap:3px}
+.seg.mini button{padding:6px 10px;font-size:11.5px}
 
 .big-zh{
   text-align:center;padding:20px 16px;border-radius:22px;background:var(--card2);
   border:1px solid var(--line2);margin-bottom:14px
 }
 .big-zh .bz-zh{font-size:31px;font-weight:800;color:var(--zh);letter-spacing:2.5px;line-height:1.35}
-.big-zh .bz-py{font-size:14px;color:var(--tx2);font-style:italic;margin-top:7px}
-.big-zh .bz-kmr{font-size:14px;color:var(--tx3);margin-top:5px;line-height:1.8}
+.big-zh .bz-py{font-size:var(--fz-py);color:var(--tx2);font-style:italic;margin-top:7px}
+.big-zh .bz-kmr{font-size:var(--fz-kmr);color:var(--tx3);margin-top:5px;line-height:1.8}
 
 .stat-mini{padding:13px;border-radius:16px;background:var(--card2);border:1px solid var(--line)}
 .stat-mini .sv{font-size:22px;font-weight:800;color:var(--ac-lt);letter-spacing:-.02em}
 .stat-mini .sl{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--tx3);margin-top:3px}
+
+.stat{padding:13px;border-radius:16px;background:var(--card2);border:1px solid var(--line);text-align:center}
+.stat .sv{font-size:24px;font-weight:800;color:var(--ac-lt);letter-spacing:-.02em}
+.stat .sl{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--tx3);margin-top:3px}
+
+/* ---------- PRO badge ---------- */
+.pro-badge{
+  display:inline-flex;align-items:center;gap:4px;font-size:9px;font-weight:800;letter-spacing:.08em;
+  padding:4px 9px;border-radius:7px;background:linear-gradient(135deg,var(--ac2),var(--hero));color:#fff;
+  text-transform:uppercase;box-shadow:0 3px 10px rgba(11,61,46,.35)
+}
+
+/* ---------- car profile form ---------- */
+.pf .pf-label{font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--tx3);margin:12px 0 6px;display:block}
+.pf .pf-label:first-child{margin-top:0}
+.pf input[type=text],.pf input[type=number],.pf select{
+  width:100%;padding:12px 13px;border-radius:13px;background:var(--card2);
+  border:1.5px solid var(--line);font-size:14px;outline:none;color:var(--tx);transition:border-color .15s
+}
+.pf input:focus,.pf select:focus{border-color:var(--ac)}
+.pf input::placeholder{color:var(--tx3)}
+.pf-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.pf-grid .full{grid-column:1/-1}
+
+/* journey editor */
+.jr{display:flex;gap:7px;align-items:center;margin-bottom:8px}
+.jr input{flex:1;min-width:0;padding:9px 11px;border-radius:11px;background:var(--card2);
+  border:1.5px solid var(--line);font-size:13px;outline:none;color:var(--tx)}
+.jr input:focus{border-color:var(--ac)}
+.jr input::placeholder{color:var(--tx3)}
+.jr .jdel{width:34px;height:34px;flex:0 0 34px;border-radius:11px;background:rgba(248,113,113,.14);
+  border:1px solid rgba(248,113,113,.4);color:var(--err);display:grid;place-items:center;font-size:14px}
+
+/* standalone settings inputs (e.g. Fish Audio voice ID) — theme-safe in both modes */
+#voiceIdIn{
+  width:100%;padding:12px 13px;border-radius:13px;background:var(--card2);
+  border:1.5px solid var(--line);font-size:14px;outline:none;color:var(--tx);transition:border-color .15s
+}
+#voiceIdIn:focus{border-color:var(--ac)}
+#voiceIdIn::placeholder{color:var(--tx3)}
+
+/* ---------- value dialog (slot commands: temperature / volume / level) ---------- */
+.val{display:flex;flex-direction:column;gap:12px}
+.val input[type=number]{
+  width:100%;padding:16px;border-radius:16px;background:var(--card2);
+  border:1.5px solid var(--line);font-size:30px;font-weight:800;text-align:center;
+  outline:none;color:var(--tx);transition:border-color .15s
+}
+.val input[type=number]:focus{border-color:var(--ac)}
+.val .val-prev{
+  padding:13px 15px;border-radius:15px;background:var(--ac-soft);border:1px solid var(--line);
+  display:flex;flex-direction:column;gap:4px
+}
+.val .val-prev .vp-zh{font-size:17px;font-weight:800;color:var(--tx)}
+.val .val-prev .vp-py{font-size:12px;color:var(--tx2);font-style:italic}
+.val .val-prev .vp-en{font-size:11.5px;color:var(--tx3)}
+.val .val-row{display:flex;gap:9px}
+.val .val-row .btn{flex:1}
+
+/* dashboard empty states */
+.ev-empty{text-align:center;padding:26px 16px;color:var(--tx3)}
+.ev-empty .ee{font-size:34px;opacity:.5;margin-bottom:8px}
+.ev-empty p{font-size:12.5px;margin:4px 0;line-height:1.6}
+.ev-empty a{color:var(--ac-lt);font-weight:700}
+
+/* live vehicle-status chips */
+.vchips{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}
+.vchip{
+  display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;
+  padding:11px 12px;border-radius:15px;background:var(--card2);border:1.5px solid var(--line);
+  transition:border-color .15s,background .15s,transform .08s
+}
+.vchip:active{transform:scale(.96)}
+.vchip.on{border-color:rgba(52,211,153,.55);background:rgba(47,158,115,.14)}
+.vchip .vchip-ic{font-size:15px}
+.vchip b{font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--tx3);margin-top:2px}
+.vchip em{font-size:14.5px;font-weight:800;color:var(--tx);font-style:normal}
+.vchip.on em{color:var(--ok)}
+
+/* built-in Fish Audio voice picker */
+.voices{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:11px}
+.vsel{
+  position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;
+  padding:11px 12px 9px;border-radius:15px;background:var(--card2);border:1.5px solid var(--line);
+  transition:border-color .15s,background .15s,transform .08s
+}
+.vsel:active{transform:scale(.95)}
+.vsel.sel{border-color:var(--ac);background:var(--ac-soft);box-shadow:0 0 0 2px var(--ac-soft)}
+.vsel .vs-em{font-size:16px}
+.vsel .vs-n{font-size:12px;font-weight:800;color:var(--tx);margin-top:2px}
+.vsel .vs-id{font-size:9.5px;color:var(--tx3);font-family:ui-monospace,Menlo,monospace}
+.vsel .vs-play{
+  position:absolute;top:8px;right:8px;font-size:12px;padding:3px 5px;border-radius:8px;
+  background:var(--card);border:1px solid var(--line)
+}
 
 .sp{height:8px}
 .divider{height:1px;background:var(--line);margin:14px 0}
@@ -430,26 +552,33 @@ input[type=range]{width:100%;accent-color:var(--ac2);height:26px}
 .center{text-align:center}
 .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
 
-/* ================= BOTTOM NAV (floating pill) ================= */
+/* ================= BOTTOM NAV (docked bottom bar) ================= */
 .nav{
-  position:fixed;bottom:calc(var(--safe-b) + 12px);left:50%;transform:translateX(-50%);z-index:60;
-  display:flex;gap:2px;padding:7px 8px;border-radius:99px;background:var(--nav-bg);
-  backdrop-filter:blur(18px) saturate(1.4);-webkit-backdrop-filter:blur(18px) saturate(1.4);
-  border:1px solid var(--line);box-shadow:var(--sh);width:min(96vw,520px)
+  position:fixed;bottom:0;left:0;right:0;z-index:60;
+  display:flex;gap:2px;padding:8px 10px calc(9px + var(--safe-b));
+  background:var(--nav-bg);backdrop-filter:blur(18px) saturate(1.4);-webkit-backdrop-filter:blur(18px) saturate(1.4);
+  border-top:1px solid var(--line);box-shadow:0 -6px 24px rgba(0,0,0,.08);width:100%
 }
 .nav-b{
-  flex:1;position:relative;padding:6px 2px;border-radius:99px;display:flex;flex-direction:column;align-items:center;gap:2px;
-  font-size:9px;font-weight:800;letter-spacing:.02em;color:var(--tx3);transition:color .15s
+  flex:1;position:relative;padding:7px 2px 6px;border-radius:16px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  font-size:9.5px;font-weight:800;letter-spacing:.02em;color:var(--tx3);
+  transition:color .2s,transform .1s
 }
-.nav-b .ni{font-size:19px;line-height:1.2;position:relative;z-index:1;transition:transform .15s}
+.nav-b:active{transform:scale(.92)}
+.nav-b .ni{width:20px;height:20px;position:relative;z-index:1;transition:transform .2s}
 .nav-b.sel{color:#fff}
-.nav-b.sel .ni{transform:translateY(-1px)}
-.nav-b.sel::before{
-  content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-  width:36px;height:36px;border-radius:50%;background:var(--ac2);z-index:0;
-  box-shadow:0 5px 14px rgba(13,77,58,.4)
+.nav-b.sel .ni{transform:translateY(-1px) scale(1.05)}
+/* Active pill wraps the whole item (icon + label) so the label stays inside it. */
+.nav-b::before{
+  content:'';position:absolute;inset:1px;border-radius:15px;z-index:0;
+  background:linear-gradient(160deg,var(--ac2) 0%,#0a352a 100%);
+  box-shadow:0 6px 16px rgba(13,77,58,.5);
+  transform:scale(.65);opacity:0;
+  transition:transform .24s cubic-bezier(.34,1.56,.64,1),opacity .18s ease
 }
-.nav-b.sel span{position:relative;z-index:1}
+.nav-b.sel::before{transform:scale(1);opacity:1}
+.nav-b span{position:relative;z-index:1}
 
 /* ================= MODAL ================= */
 .mask{
@@ -471,7 +600,65 @@ input[type=range]{width:100%;accent-color:var(--ac2);height:26px}
   .wrap{padding:20px}
 }
 @media (max-width:360px){
-  .cmd-zh{font-size:16px}
+  .cmd-zh{font-size:calc(var(--fz-zh) * .92)}
   .mic{width:106px;height:106px;font-size:42px}
   .stat-tile .st-v{font-size:27px}
 }
+
+/* ================= EV MAPS ================= */
+.map-page{display:block}
+.map-page[hidden]{display:none}
+.map-host{
+  position:relative;z-index:0;width:100%;height:52vh;min-height:300px;border-radius:18px;
+  overflow:hidden;border:1.5px solid var(--line);margin-top:12px;background:var(--card2)
+}
+.map-layers{display:grid;grid-template-columns:repeat(4,1fr);margin-top:0}
+.map-geo{
+  width:38px;height:38px;border-radius:12px;background:var(--card);border:1.5px solid var(--line);
+  font-size:16px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.25);display:grid;place-items:center
+}
+.map-strip{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.map-strip-h{font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--tx3);margin:2px 0 2px 2px}
+.mst{
+  display:flex;align-items:center;gap:11px;width:100%;text-align:left;
+  padding:11px 13px;border-radius:15px;background:var(--card2);border:1.5px solid var(--line);
+  transition:background .15s,border-color .15s,transform .08s
+}
+.mst:active{background:var(--ac-soft);border-color:var(--ac);transform:scale(.985)}
+.mst-dot{width:11px;height:11px;border-radius:50%;flex:0 0 11px;box-shadow:0 0 0 3px rgba(255,255,255,.12)}
+.mst-b{flex:1;min-width:0}
+.mst-b b{display:block;font-size:13.5px;font-weight:700;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mst-b em{display:block;font-style:normal;font-size:11.5px;color:var(--tx2);margin-top:2px}
+.mst-go{color:var(--tx3);font-size:18px}
+
+/* Leaflet pin markers */
+.mp .leaflet-container,.leaflet-container{font-family:inherit}
+.mpin-wrap{background:none;border:none}
+.mpin{
+  width:30px;height:30px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);
+  display:flex;align-items:center;justify-content:center;border:2.5px solid #fff;
+  box-shadow:0 3px 10px rgba(0,0,0,.35)
+}
+.mpin span{transform:rotate(45deg);font-size:13px;color:#fff;filter:drop-shadow(0 1px 1px rgba(0,0,0,.4))}
+.me-dot{background:none;border:none}
+.me-dot div{
+  width:18px;height:18px;border-radius:50%;background:#3b82f6;border:3px solid #fff;
+  box-shadow:0 0 0 6px rgba(59,130,246,.3)
+}
+.map-geo{position:relative}
+
+/* Leaflet popups (themed to match the app) */
+.mpop .leaflet-popup-content-wrapper{
+  background:var(--card);color:var(--tx);border:1px solid var(--line);border-radius:16px;box-shadow:var(--sh)
+}
+.mpop .leaflet-popup-tip{background:var(--card);border:1px solid var(--line)}
+.mpop .leaflet-popup-content{margin:14px 15px;line-height:1.45}
+.mpop-in b{font-size:13.5px}
+.mp-sub{font-size:11.5px;color:var(--tx2);margin-top:3px}
+.mp-avail{font-size:11.5px;font-weight:700;margin-top:7px;display:flex;align-items:center;gap:4px}
+.mp-btns{display:flex;gap:8px;margin-top:10px}
+.mp-btns a{
+  flex:1;text-align:center;text-decoration:none;font-size:11.5px;font-weight:800;
+  padding:8px 6px;border-radius:10px;background:var(--ac2);color:#fff
+}
+.mp-btns a + a{background:var(--card2);color:var(--tx);border:1px solid var(--line)}
